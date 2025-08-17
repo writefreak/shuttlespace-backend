@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  email String @unique
+  role String @default("passenger") //passenger, admin or driver
+  image Images?
+  firstName String
+  lastName String
+  vehicleSerialNo String?
+  vehicleType String?
+  isAvailable Boolean? @default(true)
+  dropAvailable Boolean? @default(false)
+  bookings Booking[] 
+  
+}
+
+model Images {
+  id        String   @id @default(cuid())
+  url       String
+  createdAt DateTime @default(now())
+  userId    String?  @unique
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Destination {
+  id String @id @default(cuid())
+  name String
+  category String
+  latitude Float
+  longitude Float
+  bookings Booking[]
+}
+
+model Location {
+  id String @id @default(cuid())
+  name String
+  category String
+  latitude Float
+  longitude Float
+pickupLocation Booking []
+}
+
+model Booking{
+  id String @id @default(cuid())
+  passengerId String
+  driverId String
+  pickupLocationId String
+  destinationId String
+  status String
+  createdAt DateTime @default(now())
+  passenger User @relation( fields: [passengerId], references: [id], onDelete: Cascade)
+  destination   Destination  @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+ aiFeature AI_Feature[]
+
+ pickupLocation    Location @relation(fields: [pickupLocationId], references: [id])
+}
+
+
+model AI_Feature {
+  id          String    @id @default(cuid())
+  bookingId   String?   // optional link to a booking
+  type        String    // e.g., "demand_prediction" or "reminder"
+  value       String    // predicted number, time, or message
+  createdAt   DateTime  @default(now())
+  booking     Booking?  @relation(fields: [bookingId], references: [id])
+}
