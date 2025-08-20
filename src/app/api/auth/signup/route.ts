@@ -1,6 +1,8 @@
-import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
+import { PrismaClient } from "@prisma/client";
+
+export const dynamic = "force-dynamic";
 
 const prisma = new PrismaClient();
 
