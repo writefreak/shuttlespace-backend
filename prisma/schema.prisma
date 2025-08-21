@@ -11,11 +11,13 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 
 model User {
   id String @id @default(cuid())
+  password String
   createdAt DateTime @default(now())
   email String @unique
   role String @default("passenger") //passenger, admin or driver
