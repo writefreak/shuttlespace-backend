@@ -1,8 +1,6 @@
-// import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
-// import { PrismaClient } from "@prisma/client";
 
-import { PrismaClient } from "@prisma/client/extension";
+import { PrismaClient } from "@prisma/client";
 import { error } from "console";
 import { NextResponse } from "next/server";
 
@@ -22,7 +20,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    const user = prisma.findUnique({
+    const user = await prisma.user.findUnique({
       where: { email },
     });
 
