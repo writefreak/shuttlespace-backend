@@ -49,6 +49,7 @@ export async function POST(req: Request) {
     const { password: _, ...safeUser } = user; //hide password
     return NextResponse.json(
       {
+        user: safeUser,
         message: "Login Successful",
       },
       { status: 200 }
