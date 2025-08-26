@@ -29,6 +29,7 @@ model User {
   isAvailable Boolean? @default(true)
   dropAvailable Boolean? @default(false)
   bookings Booking[] 
+  shuttles Shuttle[]
   
 }
 
@@ -58,19 +59,31 @@ model Location {
 pickupLocation Booking []
 }
 
-model Booking{
+model Shuttle {
+  id String @id @default(cuid())
+  driverId String
+  vehicleSerialNo String?
+  vehicleType String?
+  capacity Int
+  isAvailable Boolean @default(true)
+  driver User @relation(fields: [driverId], references: [id])
+  bookings Booking[]
+}
+
+model Booking {
   id String @id @default(cuid())
   passengerId String
-  driverId String
+  shuttleId String
   pickupLocationId String
   destinationId String
   status String
   createdAt DateTime @default(now())
-  passenger User @relation( fields: [passengerId], references: [id], onDelete: Cascade)
-  destination   Destination  @relation(fields: [destinationId], references: [id], onDelete: Cascade)
- aiFeature AI_Feature[]
 
- pickupLocation    Location @relation(fields: [pickupLocationId], references: [id])
+  passenger User @relation(fields: [passengerId], references: [id], onDelete: Cascade)
+  shuttle Shuttle @relation(fields: [shuttleId], references: [id])
+  destination Destination @relation(fields: [destinationId], references: [id])
+  pickupLocation Location @relation(fields: [pickupLocationId], references: [id])
+  aiFeature AI_Feature[]
 }
 
 
