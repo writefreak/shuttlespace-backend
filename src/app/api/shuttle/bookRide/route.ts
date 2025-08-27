@@ -12,6 +12,23 @@ export async function POST(req: NextRequest) {
       include: { bookings: true },
     });
 
+    //matching backend/database column names with frontend names
+    const destination = await prisma.destination.findFirst({
+      where: { name: body.destinationName },
+    });
+
+    const pickupLocation = await prisma.location.findFirst({
+      where: { name: body.pickupLocation },
+    });
+
+    const destinationCat = await prisma.destination.findFirst({
+      where: { category: body.destinationCat },
+    });
+
+    const rideCategory = await prisma.shuttle.findFirst({
+      where: { category: body.rideCategory },
+    });
+
     if (!shuttle || !shuttle.isAvailable) {
       return NextResponse.json(
         {

@@ -61,6 +61,7 @@ pickupLocation Booking []
 
 model Shuttle {
   id String @id @default(cuid())
+  category String
   driverId String
   vehicleSerialNo String?
   vehicleType String?
