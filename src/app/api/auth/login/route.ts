@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import { PrismaClient } from "@prisma/client";
 import { error } from "console";
 import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const isValidPassword = bcrypt.compare(password, user.password);
+    const isValidPassword = await bcrypt.compare(password, user.password);
 
     if (!isValidPassword) {
       return NextResponse.json(
@@ -47,9 +48,19 @@ export async function POST(req: Request) {
     }
 
     const { password: _, ...safeUser } = user; //hide password
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET!, // make sure you set this in your .env
+      { expiresIn: "7d" }
+    );
+
+    // return user + token
+
     return NextResponse.json(
       {
         user: safeUser,
+        token,
         message: "Login Successful",
       },
       { status: 200 }
