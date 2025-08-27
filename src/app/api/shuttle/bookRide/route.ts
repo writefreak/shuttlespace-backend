@@ -48,12 +48,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!pickupLocation || !destination) {
+      return NextResponse.json(
+        { error: "Invalid pickup or destination" },
+        { status: 400 }
+      );
+    }
+
     const booking = await prisma.booking.create({
       data: {
-        passengerId,
-        shuttleId,
-        pickupLocationId,
-        destinationId,
+        passengerId, // comes from your frontend or placeholder for now
+        shuttleId: shuttleId,
+        pickupLocationId: pickupLocation?.id, // use the ID from findFirst
+        destinationId: destination?.id, // use the ID from findFirst
         status: "booked",
       },
     });
