@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+@import url("https://fonts.googleapis.com/css2?family=Geist+Sans&family=Geist+Mono&display=swap");
+
+body {
+  font-family: "Geist Sans", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.code {
+  font-family: "Geist Mono", monospace;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
