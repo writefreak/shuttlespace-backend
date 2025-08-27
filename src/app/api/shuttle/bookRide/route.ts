@@ -2,31 +2,15 @@ import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { passengerId, shuttleId, pickupLocationId, destinationId } = body;
+  const { passengerId, shuttleId, pickupLocationName, destinationName } = body;
 
   try {
     const shuttle = await prisma.shuttle.findUnique({
       where: { id: shuttleId },
       include: { bookings: true },
-    });
-
-    //matching backend/database column names with frontend names
-    const destination = await prisma.destination.findFirst({
-      where: { name: body.destinationName },
-    });
-
-    const pickupLocation = await prisma.location.findFirst({
-      where: { name: body.pickupLocation },
-    });
-
-    const destinationCat = await prisma.destination.findFirst({
-      where: { category: body.destinationCat },
-    });
-
-    const rideCategory = await prisma.shuttle.findFirst({
-      where: { category: body.rideCategory },
     });
 
     if (!shuttle || !shuttle.isAvailable) {
@@ -38,7 +22,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    //to check if the shuttle is empty or not
     if (shuttle.bookings.length >= shuttle.capacity) {
       return NextResponse.json(
         {
@@ -47,6 +30,14 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    const pickupLocation = await prisma.location.findFirst({
+      where: { name: pickupLocationName },
+    });
+
+    const destination = await prisma.destination.findFirst({
+      where: { name: destinationName },
+    });
 
     if (!pickupLocation || !destination) {
       return NextResponse.json(
@@ -57,10 +48,10 @@ export async function POST(req: NextRequest) {
 
     const booking = await prisma.booking.create({
       data: {
-        passengerId, // comes from your frontend or placeholder for now
-        shuttleId: shuttleId,
-        pickupLocationId: pickupLocation?.id, // use the ID from findFirst
-        destinationId: destination?.id, // use the ID from findFirst
+        passengerId,
+        shuttleId,
+        pickupLocationId: pickupLocation.id,
+        destinationId: destination.id,
         status: "booked",
       },
     });
@@ -70,7 +61,7 @@ export async function POST(req: NextRequest) {
       booking,
     });
   } catch (error) {
-    console.log(error);
+    console.error("Error booking ride:", error);
     return NextResponse.json(
       {
         error: "Error booking ride",
