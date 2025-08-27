@@ -61,7 +61,7 @@ export async function POST(req: Request) {
       {
         user: safeUser,
         token,
-        message: "Login Successful",
+        message: "Login Successful and you have been...",
       },
       { status: 200 }
     );
