@@ -3,12 +3,13 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+// Remove the explicit type annotation for the second argument
 export async function DELETE(
   req: Request,
-  context: { params: { userId: string } }
+  { params }: { params: { userId: string } }
 ) {
   try {
-    const { userId } = context.params;
+    const { userId } = params; // Now you can directly access `userId` from `params`
 
     const deletedUser = await prisma.user.delete({
       where: { id: userId },
