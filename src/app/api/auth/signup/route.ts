@@ -49,12 +49,22 @@ export async function POST(req: Request) {
       lastName,
       role,
     };
+    const user = await prisma.user.create({ data: userData });
+
+    //to create a shuttle if the user is a driver
     if (role === "Driver") {
       userData.vehicleSerialNo = vehicleSerialNo;
       userData.vehicleType = vehicleType;
+      await prisma.shuttle.create({
+        data: {
+          driverId: user.id,
+          vehicleSerialNo,
+          vehicleType,
+          capacity: 15, // default or from input
+          category: vehicleType, // optional
+        },
+      });
     }
-
-    const user = await prisma.user.create({ data: userData });
 
     return NextResponse.json({ user }, { status: 201 });
   } catch (error: any) {
