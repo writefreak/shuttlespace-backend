@@ -1,25 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
+// src/app/api/users/deleteUser/route.ts
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { userId: string } } // This is the corrected line
-) {
+export async function DELETE(req: Request) {
   try {
-    const { userId } = params;
+    const { userId } = await req.json(); // read from request body
+    if (!userId) return new Response("Missing userId", { status: 400 });
 
     const deletedUser = await prisma.user.delete({
       where: { id: userId },
     });
 
-    return NextResponse.json(deletedUser, { status: 200 });
+    return new Response(JSON.stringify(deletedUser), { status: 200 });
   } catch (err) {
     console.error("Error deleting user:", err);
-    return NextResponse.json(
-      { error: "Failed to delete user" },
-      { status: 500 }
-    );
+    return new Response("Failed to delete user", { status: 500 });
   }
 }
