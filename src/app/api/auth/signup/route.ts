@@ -52,7 +52,24 @@ export async function POST(req: Request) {
     const user = await prisma.user.create({ data: userData });
 
     //to create a shuttle if the user is a driver
-    if (role === "Driver") {
+    if (role.toLowerCase() === "Driver") {
+      let capacity = 0;
+      switch (vehicleType.toLowerCase()) {
+        case "bus":
+          capacity = 11;
+          break;
+        case "shuttle":
+          capacity = 5;
+          break;
+        case "minibus":
+          capacity = 8;
+          break;
+        case "drop":
+          capacity = 1;
+          break;
+        default:
+          capacity = 1; // fallback
+      }
       userData.vehicleSerialNo = vehicleSerialNo;
       userData.vehicleType = vehicleType;
       await prisma.shuttle.create({
