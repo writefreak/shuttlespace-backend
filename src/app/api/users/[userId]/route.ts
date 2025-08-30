@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 export async function DELETE(
-  req: Request,
+  req: NextRequest,
   { params }: { params: { userId: string } } // This is the corrected line
 ) {
   try {
