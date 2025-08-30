@@ -77,7 +77,7 @@ export async function POST(req: Request) {
           driverId: user.id,
           vehicleSerialNo,
           vehicleType,
-          capacity: 15, // default or from input
+          capacity, // default or from input
           category: vehicleType, // optional
         },
       });
