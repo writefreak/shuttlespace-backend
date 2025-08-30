@@ -22,6 +22,7 @@ export async function POST(req: Request) {
       data: { name, category },
     });
 
+    console.log("Sending response:", newLocation);
     return NextResponse.json(newLocation, {
       status: 201,
     });
