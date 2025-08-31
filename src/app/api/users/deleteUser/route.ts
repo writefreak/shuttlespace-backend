@@ -12,6 +12,7 @@ export async function DELETE(req: Request) {
       where: { id: userId },
     });
 
+    await prisma.shuttle.delete({ where: { driverId: userId } });
     return new Response(JSON.stringify(deletedUser), { status: 200 });
   } catch (err) {
     console.error("Error deleting user:", err);
