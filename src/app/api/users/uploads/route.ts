@@ -12,7 +12,7 @@ const prisma = new PrismaClient();
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const file = formData.get("file") as any;
+    const file = formData.get("file") as Blob | undefined;
     const id = formData.get("id") as string;
 
     if (!file || !id) {
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const arrayBuffer = await file.arrayBuffer();
+    const arrayBuffer = await file?.arrayBuffer();
 
     const uploadResult = await supabase.storage
       .from("avatars")
