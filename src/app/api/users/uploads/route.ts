@@ -1,56 +1,47 @@
-import { PrismaClient } from "@prisma/client";
-import { createClient } from "@supabase/supabase-js";
-import { NextRequest, NextResponse } from "next/server";
+// File: /app/api/upload/route.ts (Next.js 13+ with App Router)
 
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+// Init Supabase client (server-side)
 const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY! // service role needed for server uploads
 );
 
-const prisma = new PrismaClient();
-
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
+    // Get form data
     const formData = await req.formData();
-    const file = formData.get("file") as Blob | undefined;
-    const id = formData.get("id") as string;
+    const file = formData.get("file") as File;
 
-    if (!file || !id) {
-      return NextResponse.json(
-        { error: "Missing File or id" },
-        { status: 400 }
-      );
+    if (!file) {
+      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
-    const arrayBuffer = await file?.arrayBuffer();
 
-    const uploadResult = await supabase.storage
-      .from("avatars")
-      .upload(`profileImage-${id}.jpg`, new Uint8Array(arrayBuffer), {
-        upsert: true,
+    // Create unique file name
+    const fileName = `${Date.now()}-${file.name}`;
+
+    // Upload to Supabase bucket
+    const { error } = await supabase.storage
+      .from("avatars") // bucket name
+      .upload(fileName, file, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: file.type,
       });
 
-    if (uploadResult.error) {
-      return NextResponse.json(
-        { error: uploadResult.error?.message },
-        { status: 500 }
-      );
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    const { data: publicUrlData } = supabase.storage
-      .from("avatars")
-      .getPublicUrl(`profileImage-${id}.jpg`);
 
-    const imageUrl = publicUrlData.publicUrl; //image
+    // Get public URL
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("images").getPublicUrl(fileName);
 
-    //get public url
-    const updatedUser = await prisma.user.update({
-      where: { id: id },
-      data: { image: imageUrl },
-    });
-    return NextResponse.json({
-      user: updatedUser,
-    });
-  } catch (error) {
-    console.error("Error in Upload", error);
-    NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+    return NextResponse.json({ url: publicUrl }, { status: 200 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
