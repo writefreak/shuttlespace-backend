@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     // Get public URL
     const {
       data: { publicUrl },
-    } = supabase.storage.from("images").getPublicUrl(fileName);
+    } = supabase.storage.from("avatars").getPublicUrl(fileName);
 
     return NextResponse.json({ url: publicUrl }, { status: 200 });
   } catch (err: any) {
