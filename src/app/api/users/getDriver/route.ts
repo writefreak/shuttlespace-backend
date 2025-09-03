@@ -20,8 +20,8 @@ export async function GET() {
     });
 
     // map data into a simple structure for frontend
-    const formatted = drivers.map((d) => ({
-      id: d.vehicleSerialNo, // use vehicle serial as main ID
+    const formatted = drivers.map((d, index) => ({
+      id: d.vehicleSerialNo || `DRV-${index}`, // ensures non-null
       name: `${d.firstName} ${d.lastName}`,
       cat: d.vehicleType,
       availability: d.isAvailable,
