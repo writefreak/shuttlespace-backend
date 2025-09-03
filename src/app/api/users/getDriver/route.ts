@@ -26,7 +26,9 @@ export async function GET() {
       name: `${d.firstName} ${d.lastName}`,
       cat: d.vehicleType,
       availability: d.isAvailable,
-      image: d.image,
+      image: d.image
+        ? `https://zqjkbvfqiwuuwnapvajv.supabase.co/storage/v1/object/public/avatars/${d.image}`
+        : null,
     }));
 
     return NextResponse.json(formatted);
