@@ -12,6 +12,7 @@ export async function GET() {
       select: {
         id: true,
         firstName: true,
+        image: true,
         lastName: true,
         vehicleSerialNo: true, // vehicle serial
         vehicleType: true, // vehicle type
@@ -25,6 +26,7 @@ export async function GET() {
       name: `${d.firstName} ${d.lastName}`,
       cat: d.vehicleType,
       availability: d.isAvailable,
+      image: d.image,
     }));
 
     return NextResponse.json(formatted);
