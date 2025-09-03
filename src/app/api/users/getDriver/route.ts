@@ -10,7 +10,7 @@ export async function GET() {
         role: "Driver", // only drivers
       },
       select: {
-        id: true, // serial number
+        id: true,
         firstName: true,
         lastName: true,
         vehicleSerialNo: true, // vehicle serial
@@ -21,7 +21,7 @@ export async function GET() {
 
     // map data into a simple structure for frontend
     const formatted = drivers.map((d) => ({
-      id: d.vehicleSerialNo || d.id, // use vehicle serial as main ID
+      id: d.vehicleSerialNo, // use vehicle serial as main ID
       name: `${d.firstName} ${d.lastName}`,
       cat: d.vehicleType,
       availability: d.isAvailable,
