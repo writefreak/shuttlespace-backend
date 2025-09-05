@@ -39,8 +39,8 @@ model Destination {
   id String @id @default(cuid())
   name String
   category String
-  latitude Float
-  longitude Float
+  latitude Float?
+  longitude Float?
   bookings Booking[]
 }
 

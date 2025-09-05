@@ -40,6 +40,7 @@
     "typescript": "^5"
   },
   "prisma": {
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seed.js",
+    "destinationSeed": "node prisma/destinationSeed"
   }
 }
