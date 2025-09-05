@@ -15,9 +15,7 @@ export async function GET() {
         pickupLocation: true, // fetch pickup location name
         destination: true, // fetch destination name
       },
-      orderBy: {
-        createdAt: "desc", // newest bookings first
-      },
+      orderBy: {},
     });
 
     return new Response(JSON.stringify(bookings), {
