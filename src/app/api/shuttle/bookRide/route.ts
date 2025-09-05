@@ -81,6 +81,10 @@ export async function POST(req: NextRequest) {
         status: "pending",
         paymentStatus: paymentStatus ?? "unpaid",
       },
+      include: {
+        pickupLocation: true, // gets the whole location object
+        destination: true, // gets the whole destination object
+      },
     });
 
     console.log("Booking:", booking);
