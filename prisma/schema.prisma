@@ -71,8 +71,9 @@ model Booking {
   shuttleId String
   pickupLocationId String
   destinationId String
-  status String
+  status String @default("pending")
   createdAt DateTime @default(now())
+  paymentStatus String?
 
   passenger User @relation(fields: [passengerId], references: [id], onDelete: Cascade)
   shuttle Shuttle @relation(fields: [shuttleId], references: [id])
