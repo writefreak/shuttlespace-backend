@@ -26,6 +26,7 @@ model User {
   lastName String
   vehicleSerialNo String?
   vehicleType String?
+  currentCategory String?
   isAvailable Boolean? @default(true)
   dropAvailable Boolean? @default(false)
   bookings Booking[] 

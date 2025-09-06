@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 export async function GET(req: NextRequest) {
   try {
-    // 1. auth driver
+    // 1️⃣ Authenticate driver
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       return NextResponse.json(
@@ -28,26 +28,24 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    // 2. find the driver’s shuttle(s)
-    const shuttles = await prisma.shuttle.findMany({
-      where: { driverId: driverId },
-      select: { id: true },
+    // 2️⃣ Get the driver’s current working zone
+    const driver = await prisma.user.findUnique({
+      where: { id: driverId },
+      select: { currentCategory: true },
     });
 
-    if (!shuttles.length) {
+    if (!driver || !driver.currentCategory) {
       return NextResponse.json(
-        { error: "No shuttle assigned to this driver" },
-        { status: 404 }
+        { error: "Driver has not set a working zone" },
+        { status: 400 }
       );
     }
 
-    const shuttleIds = shuttles.map((s) => s.id);
-
-    // 3. fetch only bookings for those shuttles
+    // 3️⃣ Fetch bookings in the driver’s current zone
     const bookings = await prisma.booking.findMany({
       where: {
         status: "pending",
-        shuttleId: { in: shuttleIds },
+        pickupLocation: { category: driver.currentCategory },
       },
       include: {
         passenger: true,
