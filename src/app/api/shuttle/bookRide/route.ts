@@ -6,26 +6,22 @@ const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-
-  // match your frontend keys exactly
   const { pickupLocationName, destinationName, paymentStatus } = body;
 
   try {
-    // 1. Extract token from headers
-    const authHeader = req.headers.get("authorization"); // expects "Bearer <token>"
+    // 1. Auth
+    const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       return NextResponse.json(
         { error: "Authorization header missing" },
         { status: 401 }
       );
     }
-
     const token = authHeader.split(" ")[1];
     if (!token) {
       return NextResponse.json({ error: "Token missing" }, { status: 401 });
     }
 
-    // 2. Decode JWT to get user id
     let userId: string;
     try {
       const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
@@ -34,11 +30,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    // lookup pickup and destination
+    // 2. Look up pickup & destination
     const pickupLocation = await prisma.location.findFirst({
       where: { name: pickupLocationName },
     });
-
     const destination = await prisma.destination.findFirst({
       where: { name: destinationName },
     });
@@ -50,20 +45,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // find an available shuttle
+    // get the category from pickup location
+    const category = pickupLocation.category;
+
+    // 3. Find an available shuttle in that category
     const shuttle = await prisma.shuttle.findFirst({
-      where: { isAvailable: true },
+      where: {
+        isAvailable: true,
+        category: category, // match zone/category
+      },
       include: { bookings: true },
     });
 
     if (!shuttle) {
       return NextResponse.json(
-        { error: "Sorry, no available shuttle" },
+        { error: "No available shuttle in this zone" },
         { status: 400 }
       );
     }
 
-    // check shuttle capacity
+    // 4. Check shuttle capacity
     if (shuttle.bookings.length >= shuttle.capacity) {
       return NextResponse.json(
         { error: "Selected shuttle is full" },
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // create booking with passengerId from JWT
+    // 5. Create booking
     const booking = await prisma.booking.create({
       data: {
         passengerId: userId,
@@ -82,12 +83,16 @@ export async function POST(req: NextRequest) {
         paymentStatus: paymentStatus ?? "unpaid",
       },
       include: {
-        pickupLocation: true, // gets the whole location object
-        destination: true, // gets the whole destination object
+        pickupLocation: true,
+        destination: true,
       },
     });
 
-    console.log("Booking:", booking);
+    // 6. Optional: mark shuttle busy if you want 1 passenger per shuttle
+    // await prisma.shuttle.update({
+    //   where: { id: shuttle.id },
+    //   data: { isAvailable: false },
+    // });
 
     return NextResponse.json({
       message: "Ride booked successfully, awaiting driver confirmation",
