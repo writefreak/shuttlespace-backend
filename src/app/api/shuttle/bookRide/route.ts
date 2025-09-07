@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     // 3. Find a driver currently working in that zone
     const driver = await prisma.user.findFirst({
       where: {
-        role: "driver",
+        role: "Driver",
         currentCategory: pickupZone,
       },
     });
