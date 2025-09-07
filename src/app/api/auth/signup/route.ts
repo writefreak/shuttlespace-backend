@@ -48,6 +48,8 @@ export async function POST(req: Request) {
       firstName,
       lastName,
       role,
+      vehicleSerialNo: vehicleSerialNo || null, // save on user table
+      vehicleType: vehicleType || null,
     };
     const user = await prisma.user.create({ data: userData });
 
