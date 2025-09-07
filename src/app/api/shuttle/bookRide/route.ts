@@ -45,34 +45,48 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // get the category from pickup location
-    const category = pickupLocation.category;
+    // Zone from pickup location
+    const pickupZone = pickupLocation.category;
 
-    // 3. Find an available shuttle in that category
+    // 3. Find a driver currently working in that zone
+    const driver = await prisma.user.findFirst({
+      where: {
+        role: "driver",
+        currentCategory: pickupZone,
+      },
+    });
+
+    if (!driver) {
+      return NextResponse.json(
+        { error: "No driver available in this zone" },
+        { status: 400 }
+      );
+    }
+
+    // 4. Find shuttle belonging to that driver
     const shuttle = await prisma.shuttle.findFirst({
       where: {
+        driverId: driver.id,
         isAvailable: true,
-        category: category, // match zone/category
       },
-      include: { bookings: true },
+      include: {
+        bookings: true,
+      },
     });
 
     if (!shuttle) {
       return NextResponse.json(
-        { error: "No available shuttle in this zone" },
+        { error: "No available shuttle for this driver" },
         { status: 400 }
       );
     }
 
-    // 4. Check shuttle capacity
+    // 5. Check shuttle capacity
     if (shuttle.bookings.length >= shuttle.capacity) {
-      return NextResponse.json(
-        { error: "Selected shuttle is full" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Shuttle is full" }, { status: 400 });
     }
 
-    // 5. Create booking
+    // 6. Create booking
     const booking = await prisma.booking.create({
       data: {
         passengerId: userId,
@@ -87,12 +101,6 @@ export async function POST(req: NextRequest) {
         destination: true,
       },
     });
-
-    // 6. Optional: mark shuttle busy if you want 1 passenger per shuttle
-    // await prisma.shuttle.update({
-    //   where: { id: shuttle.id },
-    //   data: { isAvailable: false },
-    // });
 
     return NextResponse.json({
       message: "Ride booked successfully, awaiting driver confirmation",
