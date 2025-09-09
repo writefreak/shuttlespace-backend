@@ -62,7 +62,7 @@ model Shuttle {
   vehicleType String?
   capacity Int
   isAvailable Boolean @default(true)
-  driver User @relation(fields: [driverId], references: [id])
+  driver User @relation(fields: [driverId], references: [id], onDelete: Cascade)
   bookings Booking[]
 }
 
@@ -77,7 +77,7 @@ model Booking {
   paymentStatus String?
 
   passenger User @relation(fields: [passengerId], references: [id], onDelete: Cascade)
-  shuttle Shuttle @relation(fields: [shuttleId], references: [id])
+  shuttle Shuttle @relation(fields: [shuttleId], references: [id], onDelete: Cascade)
   destination Destination @relation(fields: [destinationId], references: [id])
   pickupLocation Location @relation(fields: [pickupLocationId], references: [id])
   aiFeature AI_Feature[]
