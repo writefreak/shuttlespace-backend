@@ -1,45 +1,72 @@
-// app/api/bookings/status/route.ts
-import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { error } from "console";
+import { NextRequest, NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
   try {
-    const { bookingId, status, shuttleId } = await req.json();
+    const { bookingId, status } = await req.json();
 
-    if (!bookingId || !status || !shuttleId) {
+    const authHeader = req.headers.get("authorization");
+
+    if (!authHeader) {
       return NextResponse.json(
-        { error: "Missing bookingId, status or shuttleId" },
-        { status: 400 }
+        { error: "Authorization Header Missing" },
+        { status: 401 }
       );
     }
 
-    // 1. Fetch booking to verify it belongs to the shuttle
+    const token = authHeader.split("")[1];
+    if (!token) {
+      return NextResponse.json({ error: "Token Missing" }, { status: 401 });
+    }
+
+    let driverId: string;
+    try {
+      const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+      driverId = decoded.id;
+    } catch (err) {
+      return NextResponse.json({ error: "Invalid Token" }, { status: 401 });
+    }
+
+    //to check if booking exists and belongs to this particular shuttle
+
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
+      include: { shuttle: true },
     });
 
     if (!booking) {
-      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
-    }
-
-    if (booking.shuttleId !== shuttleId) {
       return NextResponse.json(
-        { error: "Booking does not belong to this shuttle" },
+        { error: "You’re not authorized to update this booking" },
         { status: 403 }
       );
     }
 
-    // 2. Update booking status
+    //to update booking status
+
     const updatedBooking = await prisma.booking.update({
       where: { id: bookingId },
-      data: { status },
+      data: {
+        status,
+      },
+      include: {
+        pickupLocation: true,
+        destination: true,
+      },
     });
 
-    return NextResponse.json(updatedBooking, { status: 200 });
-  } catch (err: any) {
-    console.error(err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({
+      message: `Booking ${status} succesfully`,
+      booking: updatedBooking,
+    });
+  } catch (error) {
+    console.error("Error updating booking status:", error);
+    return NextResponse.json(
+      { error: "Error updating booking status" },
+      { status: 500 }
+    );
   }
 }
