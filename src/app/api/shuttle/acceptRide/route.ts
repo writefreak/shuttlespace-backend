@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const token = authHeader.split("")[1];
+    const token = authHeader.split(" ")[1];
     if (!token) {
       return NextResponse.json({ error: "Token Missing" }, { status: 401 });
     }
