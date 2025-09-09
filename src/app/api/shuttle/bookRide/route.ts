@@ -6,10 +6,10 @@ const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { pickupLocationName, destinationName, paymentStatus } = body;
+  const { bookingId, status } = body;
 
   try {
-    // 1. Auth
+    // 1. Auth (same as your booking endpoint)
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       return NextResponse.json(
@@ -22,92 +22,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Token missing" }, { status: 401 });
     }
 
-    let userId: string;
+    let driverId: string;
     try {
       const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
-      userId = decoded.id;
+      driverId = decoded.id; // logged-in driver’s id
     } catch (err) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    // 2. Look up pickup & destination
-    const pickupLocation = await prisma.location.findFirst({
-      where: { name: pickupLocationName },
-    });
-    const destination = await prisma.destination.findFirst({
-      where: { name: destinationName },
-    });
-
-    if (!pickupLocation || !destination) {
-      return NextResponse.json(
-        { error: "Invalid pickup or destination" },
-        { status: 400 }
-      );
-    }
-
-    // Zone from pickup location
-    const pickupZone = pickupLocation.category;
-
-    // 3. Find a driver currently working in that zone
-    const driver = await prisma.user.findFirst({
+    // 2. Find booking that belongs to a shuttle of this driver
+    const booking = await prisma.booking.findFirst({
       where: {
-        role: "Driver",
-        currentCategory: pickupZone,
+        id: bookingId,
+        shuttle: {
+          driverId: driverId,
+        },
       },
     });
 
-    if (!driver) {
+    if (!booking) {
       return NextResponse.json(
-        { error: "No driver available in this zone" },
-        { status: 400 }
+        { error: "Booking not found or not assigned to your shuttle" },
+        { status: 404 }
       );
     }
 
-    // 4. Find shuttle belonging to that driver
-    const shuttle = await prisma.shuttle.findFirst({
-      where: {
-        driverId: driver.id,
-        isAvailable: true,
-      },
-      include: {
-        bookings: true,
-      },
+    // 3. Update booking status
+    const updated = await prisma.booking.update({
+      where: { id: bookingId },
+      data: { status },
     });
 
-    if (!shuttle) {
-      return NextResponse.json(
-        { error: "No available shuttle for this driver" },
-        { status: 400 }
-      );
-    }
-
-    // 5. Check shuttle capacity
-    if (shuttle.bookings.length >= shuttle.capacity) {
-      return NextResponse.json({ error: "Shuttle is full" }, { status: 400 });
-    }
-
-    // 6. Create booking
-    const booking = await prisma.booking.create({
-      data: {
-        passengerId: userId,
-        shuttleId: shuttle.id,
-        pickupLocationId: pickupLocation.id,
-        destinationId: destination.id,
-        status: "pending",
-        paymentStatus: paymentStatus ?? "unpaid",
-      },
-      include: {
-        pickupLocation: true,
-        destination: true,
-      },
-    });
-
-    return NextResponse.json({
-      message: "Ride booked successfully, awaiting driver confirmation",
-      booking,
-    });
+    return NextResponse.json({ message: "Booking updated", booking: updated });
   } catch (error) {
-    console.error("Error booking Ride:", error);
-    return NextResponse.json({ error: "Error booking ride" }, { status: 400 });
+    console.error("Error updating booking:", error);
+    return NextResponse.json(
+      { error: "Error updating booking" },
+      { status: 400 }
+    );
   }
 }
