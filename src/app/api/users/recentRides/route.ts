@@ -1,38 +1,42 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
+const JWT_SECRET = process.env.JWT_SECRET || "";
 
 export async function GET(req: Request) {
   try {
-    // 1️⃣ Get passengerId from query string or headers (e.g., JWT)
-    const url = new URL(req.url);
-    const passengerId = url.searchParams.get("passengerId");
-    if (!passengerId)
-      return NextResponse.json(
-        { error: "Missing passengerId" },
-        { status: 400 }
-      );
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer "))
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // 2️⃣ Fetch recent bookings for this passenger
+    const token = authHeader.split(" ")[1];
+
+    let payload: any;
+    try {
+      payload = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+
+    const passengerId = payload.id; // assuming your JWT has { id: userId }
+
+    // Fetch last 6 bookings for this passenger
     const bookings = await prisma.booking.findMany({
       where: { passengerId },
       orderBy: { createdAt: "desc" },
-      take: 10, // last 10 bookings
-      select: {
-        id: true,
-        createdAt: true,
-        status: true,
-        paymentStatus: true,
-        shuttle: { select: { category: true } },
-        pickupLocation: { select: { name: true } },
-        destination: { select: { name: true } },
-        passenger: { select: { firstName: true, lastName: true } },
+      take: 6,
+      include: {
+        passenger: true,
+        shuttle: true,
+        pickupLocation: true,
+        destination: true,
       },
     });
 
-    // 3️⃣ Map to easy frontend format
-    const mapped = bookings.map((b) => ({
+    // Map the response to only include what the frontend needs
+    const result = bookings.map((b) => ({
       id: b.id,
       createdAt: b.createdAt,
       status: b.status,
@@ -43,9 +47,9 @@ export async function GET(req: Request) {
       passengerName: `${b.passenger.firstName} ${b.passenger.lastName}`,
     }));
 
-    return NextResponse.json(mapped, { status: 200 });
+    return NextResponse.json(result, { status: 200 });
   } catch (err) {
-    console.error(err);
+    console.error("Error fetching recent bookings:", err);
     return NextResponse.json(
       { error: "Failed to fetch recent bookings" },
       { status: 500 }
