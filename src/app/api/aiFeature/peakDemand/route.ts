@@ -1,19 +1,18 @@
 // app/api/stats/peakDemand.ts
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import * as tf from "@tensorflow/tfjs";
+import { RandomForestRegression as RF } from "ml-random-forest";
 
 const prisma = new PrismaClient();
 
 export async function GET() {
   try {
-    // 1️⃣ Fetch historical bookings from your database
+    // 1️⃣ Fetch bookings from DB
     const bookings = await prisma.booking.findMany({
       select: { createdAt: true },
     });
 
     if (!bookings.length) {
-      // no data yet, return empty array
       return NextResponse.json([], { status: 200 });
     }
 
@@ -24,27 +23,22 @@ export async function GET() {
       countsPerHour[hour] += 1;
     });
 
-    // 3️⃣ Prepare tensors for TensorFlow
-    const xs = tf.tensor2d([...Array(24).keys()].map((h) => [h])); // 0-23 hours
-    const ys = tf.tensor2d(countsPerHour.map((c) => [c])); // counts
+    // 3️⃣ Prepare data for Random Forest
+    const X = Array.from({ length: 24 }, (_, i) => [i]); // [[0],[1],..,[23]]
+    const y = countsPerHour;
 
-    // 4️⃣ Build simple linear regression model
-    const model = tf.sequential();
-    model.add(tf.layers.dense({ inputShape: [1], units: 1 }));
+    // 4️⃣ Train Random Forest
+    const rf = new RF({
+      nEstimators: 100,
+      maxFeatures: 1, // only 1 feature (hour)
+    });
+    rf.train(X, y);
 
-    model.compile({ optimizer: "sgd", loss: "meanSquaredError" });
+    // 5️⃣ Predict next 6 hours (or any range)
+    const X_pred = Array.from({ length: 6 }, (_, i) => [18 + i]); // hours 18-23
+    const predictions = rf.predict(X_pred).map((v) => Math.round(v));
 
-    // 5️⃣ Train model
-    await model.fit(xs, ys, { epochs: 100 });
-
-    // 6️⃣ Predict bookings for each hour
-    const preds = model.predict(xs) as tf.Tensor;
-    const predictionArray = Array.from(preds.dataSync()).map((v) =>
-      Math.round(v)
-    );
-
-    // 7️⃣ Return predictions as JSON
-    return NextResponse.json(predictionArray, { status: 200 });
+    return NextResponse.json(predictions, { status: 200 });
   } catch (err) {
     console.error("Error fetching peak demand:", err);
     return NextResponse.json(
