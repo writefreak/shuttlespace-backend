@@ -1,12 +1,22 @@
-// app/api/bookings/recent.ts
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const recentBookings = await prisma.booking.findMany({
+    // 1️⃣ Get passengerId from query string or headers (e.g., JWT)
+    const url = new URL(req.url);
+    const passengerId = url.searchParams.get("passengerId");
+    if (!passengerId)
+      return NextResponse.json(
+        { error: "Missing passengerId" },
+        { status: 400 }
+      );
+
+    // 2️⃣ Fetch recent bookings for this passenger
+    const bookings = await prisma.booking.findMany({
+      where: { passengerId },
       orderBy: { createdAt: "desc" },
       take: 10, // last 10 bookings
       select: {
@@ -14,51 +24,28 @@ export async function GET() {
         createdAt: true,
         status: true,
         paymentStatus: true,
-        passenger: {
-          select: {
-            firstName: true,
-            lastName: true,
-            role: true,
-          },
-        },
-        shuttle: {
-          select: {
-            category: true,
-            vehicleSerialNo: true,
-          },
-        },
-        destination: {
-          select: {
-            name: true,
-          },
-        },
-        pickupLocation: {
-          select: {
-            name: true,
-          },
-        },
+        shuttle: { select: { category: true } },
+        pickupLocation: { select: { name: true } },
+        destination: { select: { name: true } },
+        passenger: { select: { firstName: true, lastName: true } },
       },
     });
 
-    // Only keep passengers, map to usable format
-    const passengers = recentBookings.map((b) => ({
+    // 3️⃣ Map to easy frontend format
+    const mapped = bookings.map((b) => ({
       id: b.id,
       createdAt: b.createdAt,
       status: b.status,
       paymentStatus: b.paymentStatus,
-      passengerName:
-        b.passenger.role === "passenger"
-          ? `${b.passenger.firstName} ${b.passenger.lastName}`
-          : "N/A",
       shuttleCategory: b.shuttle.category,
-      shuttleVehicle: b.shuttle.vehicleSerialNo,
-      destination: b.destination.name,
       pickupLocation: b.pickupLocation.name,
+      destination: b.destination.name,
+      passengerName: `${b.passenger.firstName} ${b.passenger.lastName}`,
     }));
 
-    return NextResponse.json(passengers, { status: 200 });
+    return NextResponse.json(mapped, { status: 200 });
   } catch (err) {
-    console.error("Error fetching recent bookings:", err);
+    console.error(err);
     return NextResponse.json(
       { error: "Failed to fetch recent bookings" },
       { status: 500 }
