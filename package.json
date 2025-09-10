@@ -14,6 +14,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@supabase/supabase-js": "^2.55.0",
     "@tailwindcss/oxide": "^4.1.12",
+    "@tensorflow/tfjs": "^4.22.0",
     "autoprefixer": "^10.4.21",
     "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.1",
