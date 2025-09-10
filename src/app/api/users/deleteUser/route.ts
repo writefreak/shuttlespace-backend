@@ -10,7 +10,7 @@ export async function DELETE(req: Request) {
     if (!userId) return new Response("Missing userId", { status: 400 });
 
     // Delete any shuttles related to the user safely
-    await prisma.shuttle.deleteMany({ where: { userId } });
+    // await prisma.shuttle.deleteMany({ where: { userId } });
 
     // Delete the user
     const deletedUser = await prisma.user.delete({
