@@ -8,7 +8,7 @@ export async function GET() {
     //to get all active passengers
 
     const passengersActive = await prisma.user.count({
-      where: { role: "passenger" },
+      where: { role: "Passenger" },
     });
 
     //completed bookings
@@ -18,7 +18,7 @@ export async function GET() {
 
     //active drivers
     const activeDrivers = await prisma.user.count({
-      where: { role: "driver", isAvailable: true },
+      where: { role: "Driver", isAvailable: true },
     });
 
     //available shuttles
